@@ -1,0 +1,98 @@
+---
+title: "Case Study"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(p8105.datasets)
+library(leaflet)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_color_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## Load the dataset
+
+```{r}
+data(nyc_airbnb)
+```
+
+## Brainstorming some questions:
+
+1. What is the best airbnb in staten island for less than $100?
+2. What price range is most rented in each borough?
+3. What apartment features are related to price?
+4. Cheapest room type in each neighborhood?
+5. Hosts have higher ratings?
+
+
+## Answer some questions:
+
+Data cleaning:
+
+```{r}
+nyc_airbnb=
+  nyc_airbnb %>% 
+  mutate(stars = review_scores_location/10)
+```
+
+
+```{r}
+nyc_airbnb %>% 
+  count(neighbourhood_group, room_type) %>% 
+  pivot_wider(names_from = room_type, values_from = n)
+```
+
+
+```{r}
+nyc_airbnb %>% 
+  group_by(neighbourhood_group, room_type) %>% 
+  summarize(mean_price = mean(price))
+```
+
+
+```{r}
+nyc_airbnb %>% 
+  filter(neighbourhood_group == "Manhattan") %>% 
+  count(neighbourhood)
+
+nyc_airbnb %>% 
+  filter(price < 1000,
+         neighbourhood_group == "Manhattan") %>% 
+  mutate(neighbourhood = fct_reorder(neighbourhood, price)) %>% 
+  ggplot(aes(x = neighbourhood, y = price)) +
+  geom_boxplot()+
+  coord_flip()
+```
+
+
+```{r}
+nyc_airbnb %>% 
+  sample_n(1000) %>% 
+  ggplot(aes(x = lat, y = long, color = price)) +
+  geom_point()
+```
+
+## Creating a leaflet map
+
+```{r}
+pal <- colorNumeric("viridis", nyc_airbnb %>%  pull(stars))
+
+nyc_airbnb %>% 
+  sample_n(5000) %>% 
+  leaflet() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addCircleMarkers(~lat, ~long, radius = 1, color = ~pal (stars))
+```
+
